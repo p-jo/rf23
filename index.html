@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roskilde Schedule 2023</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+</head>
+<body>
+
+  <section class="section">
+    <div class="container">
+      <h1 class="title">
+        Roskilde Schedule 2023
+      </h1>
+
+      <div class="tabs is-uppercase">
+        <ul id="links">
+        </ul>
+      </div>
+      <div id="schedule" class="table-container"></div>
+    </div>
+  </section>
+
+
+  <script>
+    $(document).ready(function() {
+      var url = 'https://www.roskilde-festival.dk/en/schedule/';
+      var proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+
+      $.ajax({
+        url: proxyUrl,
+        type: 'GET',
+        dataType: 'html',
+        success: function(response) {
+          var $html = $(response);
+          var $scheduleModules = $html.find('.ScheduleCalenderModule');
+
+          $scheduleModules.each(function() {
+            var $scheduleModule = $(this);
+            var moduleId = $scheduleModule.data('id');
+            var $table = $('<table class="table is-striped is-narrow is-size-7"></table>');
+            var $tbody = $('<tbody></tbody>');
+            var $thead = $('<thead></thead>');
+
+            var $dayLink = $('<li><a href="#'  + moduleId + '">' + moduleId + '</a></li>');
+            $('#links').append($dayLink);
+
+            // Create the table header row with the module ID
+            var $headerRow = $('<tr><th colspan="100%" class="title is-4 is-uppercase has-text-centered" id="' + moduleId + '">' + moduleId + '</th></tr>');
+            $thead.append($headerRow);
+
+            var $tableHeadings = $scheduleModule.find('.schedule--scene h2');
+            var maxColumns = $tableHeadings.length;
+
+            var $headerRow = $('<tr></tr>');
+
+            $tableHeadings.each(function(index) {
+              var $heading = $(this);
+              var $th = $('<th></th>').text($heading.text());
+              $headerRow.append($th);
+            });
+
+            $thead.append($headerRow);
+
+            $table.append($thead);
+
+
+            var $rows = $scheduleModule.find('.schedule--row');
+
+            // Create an array of arrays to hold the cells for each column
+            var columns = [];
+            var gig;
+            timeslot = [10,11,12,13,14,15,16,17,18,19,20,21,22,23,00,01,02];
+            var maxColumns = timeslot.length;
+
+
+            for (var i = 0; i < maxColumns; i++) {
+              columns.push([]);
+            }
+
+            $rows.each(function(i) {
+              var $row = $(this);
+              var $slots = $row.find('.schedule--slot');
+              gig = [];
+
+
+              for (var sl = 0; sl < timeslot.length; sl++) {
+                $gigContent = null;
+                $slots.each(function(index) {
+                  var $slot = $(this);
+                  var $startTime = $slot.find('.schedule--slot_starttime').text();
+                  var $artistName = $slot.find('h3.schedule--slot_artist-name').text();
+                  var $startHour = $startTime.slice(0,2);
+                  if (timeslot[sl] == $startHour) {
+                    $gigContent = '<p class="">' + $startTime + '</p><p class="">' + $artistName + '</p>';
+                  }
+                });
+
+                if ($gigContent == null) {
+                  $gigContent = '&nbsp;';
+                }
+
+                gig.push($gigContent);
+              }
+
+              console.log(gig);
+
+
+              console.log('columns' + columns.length + ' gigs ' + gig.length);
+
+              // Add to columns
+              for (var col = 0; col < gig.length; col++) {
+                columns[col].push($('<td>' + gig[col] + '</td>'));
+              }
+            });
+
+            // Create the rows using the columns array
+            for (var i = 0; i < maxColumns; i++) {
+              var $tableRow = $('<tr></tr>');
+
+              $tableRow.append(columns[i]);
+              $tbody.append($tableRow);
+              $table.append($tbody);
+            }
+
+            $('#schedule').append($table);
+          });
+        },
+        error: function() {
+          console.error('Error fetching data.');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
