@@ -14,11 +14,6 @@
       <h1 class="title">
         Roskilde Schedule 2023
       </h1>
-
-      <div class="tabs is-uppercase">
-        <ul id="links">
-        </ul>
-      </div>
       <div id="schedule" class="table-container"></div>
     </div>
   </section>
@@ -40,16 +35,11 @@
           $scheduleModules.each(function() {
             var $scheduleModule = $(this);
             var moduleId = $scheduleModule.data('id');
-            var $table = $('<table class="table is-striped is-narrow is-size-7" style="page-break-after: always;"></table>');
-            var $tbody = $('<tbody></tbody>');
-            var $thead = $('<thead></thead>');
-
-            var $dayLink = $('<li><a href="#'  + moduleId + '">' + moduleId + '</a></li>');
-            $('#links').append($dayLink);
+            var $table = $('<table class="table is-striped is-narrow"></table>');
 
             // Create the table header row with the module ID
-            var $headerRow = $('<tr><th colspan="100%" class="title is-4 is-uppercase has-text-centered" id="' + moduleId + '">' + moduleId + '</th></tr>');
-            $thead.append($headerRow);
+            var $headerRow = $('<tr><th colspan="100%">' + moduleId + '</th></tr>');
+            $table.append($headerRow);
 
             var $tableHeadings = $scheduleModule.find('.schedule--scene h2');
             var maxColumns = $tableHeadings.length;
@@ -62,19 +52,13 @@
               $headerRow.append($th);
             });
 
-            $thead.append($headerRow);
-
-            $table.append($thead);
-
+            $table.append($headerRow);
 
             var $rows = $scheduleModule.find('.schedule--row');
 
             // Create an array of arrays to hold the cells for each column
             var columns = [];
             var gig;
-            timeslot = [10,11,12,13,14,15,16,17,18,19,20,21,22,23,00,01,02];
-            var maxColumns = timeslot.length;
-
 
             for (var i = 0; i < maxColumns; i++) {
               columns.push([]);
@@ -85,34 +69,32 @@
               var $slots = $row.find('.schedule--slot');
               gig = [];
 
+              $slots.each(function(index) {
+                var $slot = $(this);
+                var $startTime = $slot.find('.schedule--slot_starttime').text();
+                var $artistName = $slot.find('h3.schedule--slot_artist-name').text();
+                // var $cell = $('<td></td>').text($startTime + ' - ' + $artistName);
+                // columns[index].push($cell);
+                gig.push($startTime + ' - ' + $artistName);
+              });
 
-              for (var sl = 0; sl < timeslot.length; sl++) {
-                $gigContent = null;
-                $slots.each(function(index) {
-                  var $slot = $(this);
-                  var $startTime = $slot.find('.schedule--slot_starttime').text();
-                  var $artistName = $slot.find('h3.schedule--slot_artist-name').text();
-                  var $startHour = $startTime.slice(0,2);
-                  if (timeslot[sl] == $startHour) {
-                    $gigContent = '<p class="">' + $startTime + '</p><p class="">' + $artistName + '</p>';
-                  }
-                });
+              // Sort by time
+              gig.sort(function(a, b){return a.split(':')[0] - b.split(':')[0];});
 
-                if ($gigContent == null) {
-                  $gigContent = '&nbsp;';
-                }
-
-                gig.push($gigContent);
-              }
-
-              console.log(gig);
-
-
-              console.log('columns' + columns.length + ' gigs ' + gig.length);
+              // Put night gig last
+              gig.sort(function(a,b){
+                return (a.slice(0,1) == 0) - (b.slice(0,1) == 0);
+              })
 
               // Add to columns
-              for (var col = 0; col < gig.length; col++) {
-                columns[col].push($('<td>' + gig[col] + '</td>'));
+              for (var i = 0; i < gig.length; i++) {
+                columns[i].push($('<td>' + gig[i] + '</td>'));
+              }
+
+              // Add empty cells if the row has fewer columns than the maximum
+              var numEmptyCells = maxColumns - $slots.length;
+              for (var i = 0; i < numEmptyCells; i++) {
+                columns[$slots.length + i].push($('<td></td>'));
               }
             });
 
@@ -121,8 +103,7 @@
               var $tableRow = $('<tr></tr>');
 
               $tableRow.append(columns[i]);
-              $tbody.append($tableRow);
-              $table.append($tbody);
+              $table.append($tableRow);
             }
 
             $('#schedule').append($table);
